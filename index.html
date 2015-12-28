@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html ng-app="app">
+<head>
+<!-- Angular Material CSS  version 0.11.2 used here -->
+<link rel="stylesheet" href="css/angular-material.min.css">
+<link rel="stylesheet" href="css/flightSearch.css">
+<!-- Angular Material Dependencies -->
+<script src="js/angular.min.js"></script>
+<script src="js/angular-animate.min.js"></script>
+<script src="js/angular-aria.min.js"></script>
+<!-- Angular Material Javascript now available via Google CDN; version 0.11.2 used here -->
+<script src="js/angular-material.min.js"></script>
+<script type="text/javascript" src="js/angular-messages.js"></script>
+<script type="text/javascript" src="js/app.js"></script>
+<link rel="stylesheet" type="text/css" href="css/font-awesome/css/font-awesome.min.css">
+</head>
+<body ng-controller="test">
+<div layout="column">
+	<!-- The top toolbar -->
+	<md-toolbar>
+		<div class="md-toolbar-tools">
+	        <md-button class="md-fab md-mini logo" aria-label="Flight Search" onclick="location.reload();">
+	 			<md-icon md-svg-icon="img/icons/airplane.svg">
+				</md-icon>
+	        </md-button>
+	          <span class="md-title">Flight Search</span>
+	        <span flex></span>
+	         <md-button class="md-raised md-primary" aria-label="copyright">
+	          Designed and Developed by Maliah_Rajan_M  
+	        </md-button>
+	    </div>
+    </md-toolbar>
+	<!-- The top toolbar Ends Here -->
+	<!-- Search starts here -->
+	<div layout="row" layout-wrap>
+	<!--Flex Of 10 is given-->
+		<div flex="5"></div>
+	<!--Main Search Part-->
+		<div flex="90">
+			<md-card  class="priceFilter">
+				<md-content>
+					<!--Tab starts here-->
+					<md-tabs md-dynamic-height md-border-bottom>
+						<!--Tab one goes here-->
+						<md-tab label="One way">
+							<md-content class="md-padding">
+								<div layout="row" layout-wrap>
+									<md-autocomplete md-selected-item-change="isAnyCitySelected(fromCity)" md-selected-item="departurePoint" md-search-text="depart" md-items="fromCity in searchCity(depart)" md-item-text="fromCity.city_name" md-min-length="0" placeholder="Travel from" class="md-block" flex-gt-sm>
+										<md-item-template>
+											<span md-highlight-text="depart" md-highlight-flags="^i">
+												{{fromCity.city_name}}
+											</span>
+										</md-item-template>
+										<md-not-found>
+											No cities matching "{{depart}}" were found. 
+										</md-not-found>
+									</md-autocomplete>
+									<div flex="5" class="swithchSearches">
+										<md-icon md-svg-icon="img/icons/switch-arrow.svg" class="custom-icon">
+										</md-icon>
+									</div>
+									<md-autocomplete md-selected-item-change="isAnyCitySelected(toCity)" md-selected-item="arrivalPoint" md-search-text="arrive" md-items="toCity in searchCity(arrive)" md-item-text="toCity.city_name" md-min-length="0" placeholder="Travel to" class="md-block" flex-gt-sm>
+										<md-item-template>
+											<span md-highlight-text="arrive" md-highlight-flags="^i">
+												{{toCity.city_name}}
+											</span>
+										</md-item-template>
+										<md-not-found>
+											No cities matching "{{arrive}}" were found. 
+										</md-not-found>
+									</md-autocomplete>
+									<md-datepicker ng-model="departureDate" md-placeholder="Depart on" md-min-date="minDate" class="custom-date-picker">
+									</md-datepicker>
+									<md-input-container>
+										<label>Adults</label>
+										<md-select ng-model="passengerCount" class="custom-select">
+											<md-option ng-repeat="p in passengers" value="{{p.value}}">{{p.value}}</md-option>
+										</md-select>
+									</md-input-container>
+									<div flex="5"></div>
+									<md-button class="md-raised md-primary" ng-click="searchOneWayAPI()">Search</md-button>
+								</div>
+								<div layout="row" layout-wrap>
+									<div><span class="error" ng-show="searchError">Insufficient Data</span></div>
+									<div flex="80"></div>
+									<span ng-show="oneWayAPISearchComplete" class="foundFlights">Found Flights: {{filteredOneWayFlightData.length}}</span>
+								</div>
+							</md-content>
+						</md-tab>
+						<!--Tab two goes here-->
+						<md-tab label="Round Trip">
+							<md-content class="md-padding">
+								<h1 class="md-display-2"></h1>
+								<pre>This part is currently under Coding :p</pre>
+							</md-content>
+						</md-tab>
+					</md-tabs>
+					<!--Tab ends here-->
+				</md-content>
+				<!--loader starts here-->
+				<md-progress-linear md-mode="indeterminate" ng-show="loader"></md-progress-linear>
+				<!--loader ends-->
+				<!--filters goes here-->
+				<md-divider ng-show="oneWayAPISearchComplete"></md-divider>
+				<div layout="row" layout-wrap ng-show="oneWayAPISearchComplete">
+					<md-input-container class="md-block">
+						<label>Stops</label>
+						<md-select ng-model="filter.stops" class="custom-select-filter">
+							<md-option ng-repeat="s in stops" value="{{s.value}}">{{s.name}}</md-option>
+						</md-select>
+					</md-input-container>
+					<md-input-container class="md-block">
+						<label>Airlines</label>
+						<md-select ng-model="filter.airlines" class="custom-select-filter">
+							<md-option ng-repeat="a in airlines" value="{{a.code}}" ng-click="airlinesName(a.name)">{{a.name}}</md-option>
+						</md-select>
+					</md-input-container>
+					<div>
+<!-- 						<md-button class="priceFilterButton" ng-click="priceFilter =!priceFilter">Price <i class="fa fa-sort-desc"></i></md-button>
+						<md-card class="priceSlider" ng-show="priceFilter">
+							<md-slider flex class="md-primary" md-discrete ng-model="filter.price" step="1" min="{{minPriceValue}}" max="{{maxPriceValue}}" aria-label="priceFliter">
+							</md-slider>
+						</md-card> -->
+						<md-menu md-offset="0 -7">
+				          <md-button aria-label="Open demo menu" class="priceFilterButton" ng-click="$mdOpenMenu($event)">
+				            Price <i class="fa fa-sort-desc"></i>
+				          </md-button>
+				          <md-menu-content class="custom-menu-content" width="6">
+								<md-slider flex class="md-primary" md-discrete ng-model="filter.price" step="1" min="{{minPriceValue}}" max="{{maxPriceValue}}" aria-label="priceFliter">
+								</md-slider>
+				          </md-menu-content>
+					    </md-menu>
+					</div>
+					<div flex="55"></div>
+				</div>
+				<!--filter ends-->
+			</md-card>
+			<!--Card ends here-->
+			<!-- active filters are shown here-->
+			<div layout="row" layout-wrap ng-show="isAnyFilter()">
+				<md-content class="md-padding">
+					<span ng-show="isAnyFilter()">
+						Active Filters: 
+					</span>
+					<div class="ajs-filter-div">
+						<span ng-show="filter.stops"><span ng-if="filter.stops == 0">No-Stops</span><span ng-if="filter.stops > 0">{{filter.stops}} Stops</span><i class="fa fa-close" ng-click="filter.stops = null"></i></span>
+					</div>
+					<div class="ajs-filter-div">
+						<span ng-show="selectedAirline">
+							{{selectedAirline}} <i class="fa fa-close" ng-click="filter.airlines = null;selectedAirline = null;"></i>
+						</span>
+					</div>
+					<div class="ajs-filter-div">
+						<span ng-show="filter.price">
+							Under Rs. {{filter.price}} <i class="fa fa-close" ng-click="filter.price = null"></i>
+						</span>
+					</div>
+					<a ng-show="isAnyFilter()" href="" ng-click="removeAllFilter()"> Remove all</a>
+				</md-content>
+			</div>
+			<!--active filter part ends-->
+
+		</div>
+	<!--Flex Of 10 is given-->
+		<div flex="5"></div>
+	</div>
+	<!-- Search Ends Here-->
+</div>
+<!--search results are displayed here-->
+<div layout="row" layout-wrap>
+	<!--Flex Of 10 is given-->
+		<div flex="5"></div>
+	<!--Main Search Part-->
+		<div flex="90">
+			<md-card ng-show="oneWayAPISearchComplete">
+				<md-content>
+				<div ng-repeat="flights in (filteredOneWayFlightData = (oneWayFlightData | flightsFilter:filter)).slice(((currentPage-1)*itemsPerPage), ((currentPage)*itemsPerPage))">
+					<md-content class="md-padding">
+					<div layout="row" layout-wrap>
+						<md-content>
+						    <span ng-repeat = "fS in flights.slice">
+                                <span ng-repeat="fSS in fS.segment|limitTo:1">
+                                    <img alt="" class="face" src="img/{{fSS.flight.carrier}}.jpg">
+                                </span>
+                            </span>
+						</md-content>
+							<div layout="column" layout-align="space-around center" style="margin-left:10px;">
+								<div>
+									Origin: <span ng-repeat = "fS in flights.slice">
+			                                    <span ng-repeat="fSS in fS.segment|limitTo:1">
+			                                        <span ng-repeat="fSSL in fSS.leg|limitTo:1">
+			                                          <span> {{fSSL.origin}}  </span>
+			                                        </span>
+			                                    </span>
+		                               		 </span>
+								</div>
+								<div>
+									Departure: <span ng-repeat = "fS in flights.slice">
+			                                    <span ng-repeat="fSS in fS.segment|limitTo:1">
+				                                        <span ng-repeat="fSSL in fSS.leg|limitTo:1">
+				                                          <span> {{fSSL.departureTime | date:"h:mma"}}  </span>
+			                                        </span>
+			                                    </span>
+		                               		 </span>
+								</div>
+							</div>
+							<div layout="column" layout-align="space-around center" flex="10">
+								<div></div>
+								<div><i class="fa fa-long-arrow-right" style="font-size:30px;"></i></div>
+								<div></div>
+							</div>
+							<div layout="column" layout-align="space-around center" >
+								<div>
+									Destination:  <span ng-repeat = "fS in flights.slice">
+				                                    <span ng-repeat="fSS in fS.segment">
+				                                    	<span ng-show="{{$last}}">
+					                                        <span ng-repeat="fSSL in fSS.leg|limitTo:1">
+					                                          <span ng-if="$last"> {{fSSL.destination}}  </span>
+					                                        </span>
+					                                    </span>
+				                                    </span>
+			                               		 </span>
+								</div>
+								<div>
+									Arrival: <span ng-repeat = "fS in flights.slice">
+			                                    <span ng-repeat="fSS in fS.segment">
+			                                    	<span ng-show="{{$last}}">
+				                                        <span ng-repeat="fSSL in fSS.leg|limitTo:1">
+				                                          <span> {{fSSL.arrivalTime | date:"h:mma"}}  </span>
+				                                        </span>
+			                                        </span>
+			                                    </span>
+		                               		 </span>
+								</div>
+							</div>
+						<div flex="5"></div>
+						<div layout="column" layout-align="space-around center" class="custom-margin-left-15">
+							<div>
+								Duration: <span ng-repeat = "fS in flights.slice">
+		                                    {{fS.duration | time:'mm':'hhh mmm':false}}                                            
+		                                  </span>
+							</div>
+							<div>
+								<span ng-repeat = "fS in flights.slice">
+	                                <div ng-if="fS.segment.length == 1">No-Stops</div>
+	                                <div ng-if="fS.segment.length == 2">1 Stop</div>
+	                                <div ng-if="fS.segment.length > 2">{{fS.segment.length -1}} Stops</div>
+	                       		 </span>
+							</div>
+						</div>
+						<div flex="5"></div>
+						<div layout="column" layout-align="space-around center" class="custom-margin-left-15">
+							<div>
+								<span ng-click="fareBreakUp=!fareBreakUp">
+									<a style="display:block;cursor: pointer; cursor: hand;">Fare Breakups 
+										<i ng-show="!fareBreakUp" class="fa fa-chevron-down"></i> 
+										<i ng-show="fareBreakUp" class="fa fa-chevron-up"></i>
+									</a>
+								</span>
+							</div>
+							<div>
+								<span ng-click="viaFlight=!viaFlight">
+									<a style="display:block;cursor: pointer; cursor: hand;">Flight Itenary 
+										<i ng-show="!fareBreakUp" class="fa fa-chevron-down"></i> 
+										<i ng-show="fareBreakUp" class="fa fa-chevron-up"></i>
+									</a>
+								</span>
+							</div>
+						</div>
+						<div layout="column" layout-align="space-around end" class="custom-margin-left-40">
+							<div>
+								<div class="fareHighlight">
+									Fare: {{flights.saleTotal}}
+								</div>
+							</div>
+							<div>
+								<md-button class="custom-select-button md-raised md-primary">select</md-button>
+							</div>
+						</div>
+					</div>
+						<md-card ng-show="fareBreakUp" style="border: 2px dashed #ddbdc8;">
+							<div ng-repeat = "fP in flights.pricing">			                                        
+								<md-content>
+									<md-content class="md-padding">
+										<div layout="row" layout-wrap>
+											<div flex="20"></div>
+											<div flex="5">#{{$index + 1}}</div>
+											<div layout="column" layout-align="space-around center">BaseFare: {{fP.baseFareTotal}}</div>
+											<div layout="column" layout-align="space-around center" flex="5">+</div>
+											<div layout="column" layout-align="space-around center">SaleTax: {{fP.saleTaxTotal}}</div>
+											<div layout="column" layout-align="space-around center" flex="5">=</div>
+											<div layout="column" layout-align="space-around center">Total Fare: {{fP.saleTotal}}</div>
+											<div flex="5"></div>
+										</div>
+									</md-content>
+									<md-divider ng-if="!$last"></md-divider>
+								</md-content>
+							</div>
+						</md-card>
+						<md-card ng-show="viaFlight" style="border: 2px dashed #ddbdc8;">
+							<div ng-repeat = "fP in flights.pricing">	
+								<div ng-repeat = "fPF in fP.fare">		                                        
+									<md-content>
+										<md-content class="md-padding">
+											<div layout="row" layout-wrap>
+												<div flex="30"></div>
+												<div flex="5">#{{$index + 1}}</div>
+												<div layout="column" layout-align="space-around center">Origin: {{fPF.origin}}</div>
+												<div layout="column" layout-align="space-around center" flex="10"><i class="fa fa-long-arrow-right" style="font-size:30px;"></i></div>
+												<div layout="column" layout-align="space-around center">Destination: {{fPF.destination}}</div>
+												<div flex="5"></div>
+											</div>
+										</md-content>
+										<md-divider ng-if="!$last"></md-divider>
+									</md-content>
+								</div>
+							</div>
+						</md-card>
+					<div layout="column">
+						<md-divider ng-if="!$last"></md-divider>
+					</div>
+				</div>
+				</md-content>
+			</md-card>
+			<div ng-show="oneWayAPISearchComplete">
+				<pagination total-items="totalItems" ng-model="currentPage" ng-change="pageChanged()" class="pagination-sm" items-per-page="itemsPerPage"></pagination>
+			</div>
+		</div>
+	<!--Flex Of 10 is given-->
+		<div flex="5"></div>
+	</div>
+	<!-- Search Ends Here-->
+</div>
+<!--search results ends-->
+</body>
+<script type="text/javascript" src="js/ui-bootstrap-tpls-0.11.0.js"></script>
+</html>
